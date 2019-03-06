@@ -69,7 +69,7 @@ class SegmentationApplication(BaseApplication):
 
         # initialise input image readers
         if self.is_training:
-            reader_names = ('image', 'label', 'weight', 'sampler')
+            reader_names = ('image', 'label', 'weight_map', 'sampler')
         elif self.is_inference:
             # in the inference process use `image` input only
             reader_names = ('image',)
@@ -313,7 +313,7 @@ class SegmentationApplication(BaseApplication):
             data_loss = loss_func(
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
-                weight_map=data_dict.get('weight', None))
+                weight_map=data_dict.get('weight_map', None))
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
