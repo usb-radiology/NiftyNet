@@ -105,7 +105,7 @@ class SegmentationApplication(BaseApplication):
             if self.net_param.whitening else None
         percentile_normaliser = PercentileNormalisationLayer(
             image_name='image', binary_masking_func=foreground_masking_layer) \
-            if self.net_param.percentile_normaliser else None
+            if self.net_param.percentile_normalisation else None
         histogram_normaliser = HistogramNormalisationLayer(
             image_name='image',
             modalities=vars(task_param).get('image'),
