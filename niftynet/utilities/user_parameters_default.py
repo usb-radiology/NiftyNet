@@ -388,6 +388,12 @@ def add_network_args(parser):
         default=False)
 
     parser.add_argument(
+        "--percentile_normalisation",
+        help="Indicates if percentile normalisation should be applied",
+        type=str2boolean,
+        default=False)
+
+    parser.add_argument(
         "--normalise_foreground_only",
         help="Indicates whether a foreground mask should be applied when"
              " normalising volumes",

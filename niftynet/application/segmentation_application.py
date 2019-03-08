@@ -22,6 +22,8 @@ from niftynet.layer.histogram_normalisation import \
 from niftynet.layer.loss_segmentation import LossFunction
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
+from niftynet.layer.percentile_normalisation import \
+        PercentileNormalisationLayer
 from niftynet.layer.pad import PadLayer
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
@@ -30,7 +32,7 @@ from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
-SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred'])
+SUPPORTED_INPUT = set(['image', 'label', 'weight_map', 'sampler', 'inferred'])
 
 
 class SegmentationApplication(BaseApplication):
@@ -60,6 +62,8 @@ class SegmentationApplication(BaseApplication):
                          self.initialise_grid_sampler,
                          self.initialise_grid_aggregator),
         }
+        self.learning_rate = None
+        self.current_lr = tf.constant(0)
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
@@ -99,6 +103,9 @@ class SegmentationApplication(BaseApplication):
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image', binary_masking_func=foreground_masking_layer) \
             if self.net_param.whitening else None
+        percentile_normaliser = PercentileNormalisationLayer(
+            image_name='image', binary_masking_func=foreground_masking_layer) \
+            if self.net_param.percentile_normaliser else None
         histogram_normaliser = HistogramNormalisationLayer(
             image_name='image',
             modalities=vars(task_param).get('image'),
@@ -129,6 +136,8 @@ class SegmentationApplication(BaseApplication):
             normalisation_layers.append(histogram_normaliser)
         if mean_var_normaliser is not None:
             normalisation_layers.append(mean_var_normaliser)
+        if percentile_normaliser is not None:
+            normalisation_layers.append(percentile_normaliser)
         if task_param.label_normalisation and \
                 (self.is_training or not task_param.output_prob):
             normalisation_layers.extend(label_normalisers)
@@ -302,10 +311,11 @@ class SegmentationApplication(BaseApplication):
             net_out = self.net(image, **net_args)
 
             with tf.name_scope('Optimiser'):
+                self.learning_rate = tf.placeholder(tf.float32, shape=[])
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
-                    learning_rate=self.action_param.lr)
+                    learning_rate=self.learning_rate)
             loss_func = LossFunction(
                 n_class=self.segmentation_param.num_classes,
                 loss_type=self.action_param.loss_type,
@@ -342,6 +352,8 @@ class SegmentationApplication(BaseApplication):
 
             grads = self.optimiser.compute_gradients(
                 loss, var_list=to_optimise, colocate_gradients_with_ops=True)
+            grads_values, tvars = list(zip(*grads))
+            gnorm = tf.global_norm(grads_values)
 
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
@@ -350,8 +362,28 @@ class SegmentationApplication(BaseApplication):
                 var=data_loss, name='loss',
                 average_over_devices=False, collection=CONSOLE)
             outputs_collector.add_to_collection(
+                var=gnorm, name='gnorm',
+                average_over_devices=False, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=gnorm, name='gnorm',
+                average_over_devices=False, summary_type='scalar',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
                 var=data_loss, name='loss',
                 average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=self.learning_rate, name='lr',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+                var=image, name='image',
+                average_over_devices=False, summary_type='image3_sagittal',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=net_out, name='output',
+                average_over_devices=False, summary_type='image3_sagittal',
                 collection=TF_SUMMARIES)
 
             # outputs_collector.add_to_collection(
@@ -412,3 +444,30 @@ class SegmentationApplication(BaseApplication):
 
     def add_inferred_output(self, data_param, task_param):
         return self.add_inferred_output_like(data_param, task_param, 'label')
+
+    def set_iteration_update(self, iteration_message):
+        """
+        This function will be called by the application engine at each
+        iteration.
+        """
+        current_iter = iteration_message.current_iter
+        if iteration_message.is_training:
+            if current_iter < 1000:
+                self.current_lr = 1e-9
+            elif current_iter < 2000:
+                self.current_lr = 1e-8
+            elif current_iter < 3000:
+                self.current_lr = 1e-7
+            elif current_iter < 4000:
+                self.current_lr = 1e-6
+            elif current_iter < 6000:
+                self.current_lr = 1e-5
+            elif current_iter < 8000:
+                self.current_lr = 1e-4
+            else:
+                self.current_lr = self.action_param.lr * pow(0.5,(current_iter // 50000))
+
+            iteration_message.data_feed_dict[self.is_validation] = False
+        elif iteration_message.is_validation:
+            iteration_message.data_feed_dict[self.is_validation] = True
+        iteration_message.data_feed_dict[self.learning_rate] = self.current_lr
