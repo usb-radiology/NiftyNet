@@ -470,4 +470,4 @@ class SegmentationApplication(BaseApplication):
             iteration_message.data_feed_dict[self.is_validation] = False
         elif iteration_message.is_validation:
             iteration_message.data_feed_dict[self.is_validation] = True
-        iteration_message.data_feed_dict[self.learning_rate] = self.current_lr
+            iteration_message.data_feed_dict[self.learning_rate] = self.current_lr
