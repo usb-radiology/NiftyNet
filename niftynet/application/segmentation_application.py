@@ -465,9 +465,11 @@ class SegmentationApplication(BaseApplication):
             elif current_iter < 8000:
                 self.current_lr = 1e-4
             else:
-                self.current_lr = self.action_param.lr * pow(0.5,(current_iter // 50000))
+                self.current_lr = self.action_param.lr * pow(
+                    self.segmentation_param.lr_gamma,
+                    (current_iter // self.segmentation_param.lr_step_size))
 
             iteration_message.data_feed_dict[self.is_validation] = False
+            iteration_message.data_feed_dict[self.learning_rate] = self.current_lr
         elif iteration_message.is_validation:
             iteration_message.data_feed_dict[self.is_validation] = True
-            iteration_message.data_feed_dict[self.learning_rate] = self.current_lr

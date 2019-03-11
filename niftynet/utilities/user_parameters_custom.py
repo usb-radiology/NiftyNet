@@ -171,6 +171,21 @@ def __add_segmentation_args(parser):
         choices=['foreground', 'label', 'cc'],
         default='foreground')
 
+    parser.add_argument(
+        "--lr_step_size",
+        help="Number of iterations to keep the learning rate constant before "
+             "dropping it by a factor of lr_gamma.",
+        metavar='',
+        type=int,
+        default=50000)
+
+    parser.add_argument(
+        "--lr_gamma",
+        help="Factor to drop learning rate every lr_step_size iterations",
+        metavar='',
+        type=float,
+        default=0.5)
+
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser

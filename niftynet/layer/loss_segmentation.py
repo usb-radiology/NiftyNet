@@ -367,8 +367,22 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
 
 
 def cross_entropy_dense(prediction, ground_truth, weight_map=None):
-    if weight_map is not None:
-        raise NotImplementedError
+    """
+    Function to calculate the cross-entropy loss
+    with dense binary probability density
+
+    entropy = tf.nn.softmax_cross_entropy_with_logits(
+        logits=prediction, labels=ground_truth)
+    return tf.reduce_mean(entropy)
+    :param prediction: the logits (before softmax)
+    :param ground_truth: the segmentation probability mask
+    :param weight_map: per element loss weight
+    :return: the weighted cross-entropy loss
+    """
+    entropy = tf.nn.softmax_cross_entropy_with_logits_v2(
+        logits=prediction, labels=ground_truth)
+    weight_sum = tf.maximum(tf.reduce_sum(weight_map), 1e-6)
+    return tf.reduce_sum(entropy * weight_map / weight_sum)
 
     entropy = tf.nn.softmax_cross_entropy_with_logits(
         logits=prediction, labels=ground_truth)
