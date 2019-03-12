@@ -92,6 +92,9 @@ def balanced_spatial_coordinates(
             "labels: %s", len(unique_labels))
 
     # system parameter?
+    unique_labels = list(unique_labels)
+    unique_labels.remove(0)
+    np.array(unique_labels)
     class_probs = [1.0 / len(unique_labels)] * len(unique_labels)
     label_counts = np.random.multinomial(n_samples, class_probs)
     # Look inside each label and sample `count`. Add the middle_coord of
