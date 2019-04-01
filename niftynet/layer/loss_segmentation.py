@@ -385,7 +385,7 @@ def cross_entropy_dense(prediction, ground_truth, weight_map=None):
         weight_sum = tf.maximum(tf.reduce_sum(weight_map), 1e-6)
         return tf.reduce_sum(entropy * weight_map / weight_sum)
     else:
-        return tf.reduce_sum(entropy)
+        return tf.reduce_sum(entropy / tf.cast(tf.size(entropy), dtype=tf.float32))
     
 
 def wasserstein_disagreement_map(
