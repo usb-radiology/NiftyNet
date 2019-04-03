@@ -15,8 +15,8 @@ class PercentileNormalisationLayer(Layer):
     difference between the 99th and 1st percentile
     """
 
-    def __init__(self, image_name, binary_masking_func=None):
-
+    def __init__(self, image_name, binary_masking_func=None, cutoff=[0.05, 0.95]):
+        self.cutoff = cutoff
         self.image_name = image_name
         super(PercentileNormalisationLayer, self).__init__(name='mean_var_norm')
         self.binary_masking_func = None
@@ -41,12 +41,12 @@ class PercentileNormalisationLayer(Layer):
             image_mask = np.ones_like(image_data, dtype=np.bool)
 
         if image_data.ndim == 3:
-            image_data = percentile_transformation(image_data, image_mask)
+            image_data = percentile_transformation(image_data, image_mask, self.cutoff)
         if image_data.ndim == 5:
             for m in range(image_data.shape[4]):
                 for t in range(image_data.shape[3]):
                     image_data[..., t, m] = percentile_transformation(
-                        image_data[..., t, m], image_mask[..., t, m])
+                        image_data[..., t, m], image_mask[..., t, m], self.cutoff)
 
         if isinstance(image, dict):
             image[self.image_name] = image_data
@@ -59,9 +59,9 @@ class PercentileNormalisationLayer(Layer):
             return image_data, image_mask
 
 
-def percentile_transformation(image, mask):
+def percentile_transformation(image, mask, cutoff):
     # make sure image is a monomodal volume
     masked_img = ma.masked_array(image, np.logical_not(mask))
-    prct = np.percentile(masked_img, [1, 99])
+    prct = np.percentile(masked_img, 100 * np.array(cutoff))
     image = (image - prct[0]) / (max(prct[1]-prct[0], 1e-5))
     return image
