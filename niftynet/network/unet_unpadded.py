@@ -58,7 +58,7 @@ class UNet3D(TrainableLayer):
 
     def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
         # image_size-4  should be divisible by 8
-        assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 4)
+        assert layer_util.check_spatial_dims(images, lambda x: x % 16 == 4)
         assert layer_util.check_spatial_dims(images, lambda x: x >= 89)
         block_layer = UNetBlock('DOWNSAMPLE',
                                 (self.n_features[0], self.n_features[1]),
@@ -155,6 +155,86 @@ class UNet3D(TrainableLayer):
 
         return final_output_tensor
 
+class UNet3D_shallow(TrainableLayer):
+    """
+    reimplementation of 3D U-net with only two resolution levels
+      Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
+      sparse annotation", MICCAI '16
+    """
+
+    def __init__(self,
+                 num_classes,
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
+                 acti_func='prelu',
+                 name='UNet'):
+        super(UNet3D_shallow, self).__init__(name=name)
+
+        self.n_features = [32, 64, 128]
+        self.acti_func = acti_func
+        self.num_classes = num_classes
+
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
+
+        print('using {}'.format(name))
+
+    def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
+        # image_size  should be divisible by 4
+        assert layer_util.check_spatial_dims(images, lambda x: x % 4 == 0 )
+        assert layer_util.check_spatial_dims(images, lambda x: x >= 21 )
+        block_layer = UNetBlock('DOWNSAMPLE',
+                                (self.n_features[0], self.n_features[1]),
+                                (3, 3), with_downsample_branch=True,
+                                w_initializer=self.initializers['w'],
+                                w_regularizer=self.regularizers['w'],
+                                acti_func=self.acti_func,
+                                name='d0')
+        pool_1, conv_1 = block_layer(images, is_training)
+        print(block_layer)
+
+        block_layer = UNetBlock('UPSAMPLE',
+                                (self.n_features[1], self.n_features[2]),
+                                (3, 3), with_downsample_branch=False,
+                                w_initializer=self.initializers['w'],
+                                w_regularizer=self.regularizers['w'],
+                                acti_func=self.acti_func,
+                                name='d1')
+        up_1, _ = block_layer(pool_1, is_training)
+        print(block_layer)
+
+        block_layer = UNetBlock('NONE',
+                                (self.n_features[1],
+                                 self.n_features[1],
+                                 self.num_classes),
+                                (3, 3),
+                                with_downsample_branch=True,
+                                w_initializer=self.initializers['w'],
+                                w_regularizer=self.regularizers['w'],
+                                acti_func=self.acti_func,
+                                name='u0')
+        crop_layer = CropLayer(border=4, name='crop-8')
+        concat_1 = ElementwiseLayer('CONCAT')(crop_layer(conv_1), up_1)
+        print(block_layer)
+
+        # for the last layer, upsampling path is not used
+        _, output_tensor = block_layer(concat_1, is_training)
+
+        output_conv_op = ConvolutionalLayer(n_output_chns=self.num_classes,
+            kernel_size=1,
+            w_initializer=self.initializers['w'],
+            w_regularizer=self.regularizers['w'],
+            acti_func=None,
+            name='{}'.format(self.num_classes),
+            padding='VALID',
+            with_bn=False,
+            with_bias=True)
+        final_output_tensor = output_conv_op(output_tensor, is_training)
+        print(output_conv_op)
+
+        return final_output_tensor
 
 SUPPORTED_OP = set(['DOWNSAMPLE', 'UPSAMPLE', 'NONE'])
 
