@@ -5,6 +5,7 @@ Sampling image by a sliding window.
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+from scipy import ndimage
 import tensorflow as tf
 
 from niftynet.engine.image_window_dataset import ImageWindowDataset
@@ -96,8 +97,13 @@ class GridSampler(ImageWindowDataset):
                     x_start, y_start, z_start, x_end, y_end, z_end = \
                         coordinates[name][idx, 1:]
                     try:
-                        image_window = data[name][
-                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                        XX, YY, ZZ, CC, NN = np.mgrid[x_start:x_end,
+                              y_start:y_end,
+                              z_start:z_end,0:data[name].shape[3], 0:data[name].shape[4]]
+                        image_window = ndimage.map_coordinates(data[name], \
+                            [XX.flatten(), YY.flatten(), ZZ.flatten(), \
+                             CC.flatten(), NN.flatten()], mode='constant', \
+                             cval=0, order=0).reshape(XX.shape)
                     except ValueError:
                         tf.logging.fatal(
                             "dimensionality miss match in input volumes, "
@@ -143,8 +149,9 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     all_coordinates = {}
     for name, image_shape in img_sizes.items():
         window_shape = win_sizes[name]
-        grid_size = [max(win_size - 2 * border, 0)
-                     for (win_size, border) in zip(window_shape, border_size)]
+        grid_size = [max(win_size, 0)
+                     for win_size in window_shape]
+
         assert len(image_shape) >= N_SPATIAL, \
             'incompatible image shapes in grid_spatial_coordinates'
         assert len(window_shape) >= N_SPATIAL, \
@@ -167,9 +174,6 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
             spatial_coords[:, N_SPATIAL + idx] = \
                 starting_coords[:, idx] + window_shape[idx]
         max_coordinates = np.max(spatial_coords, axis=0)[N_SPATIAL:]
-        assert np.all(max_coordinates <= image_shape[:N_SPATIAL]), \
-            "window size greater than the spatial coordinates {} : {}".format(
-                max_coordinates, image_shape)
         subject_list = np.ones((n_locations, 1), dtype=np.int32) * subject_id
         spatial_coords = np.append(subject_list, spatial_coords, axis=1)
         all_coordinates[name] = spatial_coords
