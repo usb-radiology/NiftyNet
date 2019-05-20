@@ -81,20 +81,17 @@ def balanced_spatial_coordinates(
         'image and sampling map shapes do not match'
 
     # Find the number of unique labels
-    win_spatial_size = np.asarray(win_spatial_size, dtype=np.int32)
-    cropped_map = crop_sampling_map(sampler_map, win_spatial_size)
 
-    flatten_map = cropped_map.flatten()
+    flatten_map = sampler_map.flatten()
     unique_labels = np.unique(flatten_map)
     if len(unique_labels) > 500:
         tf.logging.warning(
             "unusual discrete volume: number of unique "
-            "labels: %s", len(unique_labels))
+            "labels: %d", len(unique_labels))
 
     # system parameter?
     unique_labels = list(unique_labels)
     unique_labels.remove(0)
-    np.array(unique_labels)
     class_probs = [1.0 / len(unique_labels)] * len(unique_labels)
     label_counts = np.random.multinomial(n_samples, class_probs)
     # Look inside each label and sample `count`. Add the middle_coord of
@@ -102,7 +99,7 @@ def balanced_spatial_coordinates(
     middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     sample_count = 0
     for label, count in zip(unique_labels, label_counts):
-        # Get indices where(cropped_map == label)
+        # Get indices where(flatten_map == label)
         valid_locations = np.where(flatten_map == label)[0]
 
         # Sample `count` from those indices. Need replace=True. Consider the
@@ -125,11 +122,7 @@ def balanced_spatial_coordinates(
         # Place into `middle_coords`
         for sample in samples:
             middle_coords[sample_count, :N_SPATIAL] = \
-                np.unravel_index(sample, cropped_map.shape)[:N_SPATIAL]
+                np.unravel_index(sample, sampler_map.shape)[:N_SPATIAL]
             sample_count += 1
 
-    # re-shift coords due to the crop
-    half_win = np.floor(win_spatial_size / 2).astype(np.int32)
-    middle_coords[:, :N_SPATIAL] = \
-        middle_coords[:, :N_SPATIAL] + half_win[:N_SPATIAL]
     return middle_coords

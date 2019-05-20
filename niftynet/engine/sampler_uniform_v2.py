@@ -7,6 +7,7 @@ input image.
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+from scipy import ndimage
 import tensorflow as tf
 
 from niftynet.engine.image_window_dataset import ImageWindowDataset
@@ -91,8 +92,11 @@ class UniformSampler(ImageWindowDataset):
                 x_start, y_start, z_start, x_end, y_end, z_end = \
                     location_array[window_id, 1:]
                 try:
-                    image_window = data[name][
-                        x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                    XX, YY, ZZ, CC, NN = np.mgrid[x_start:x_end,
+                          y_start:y_end,
+                          z_start:z_end,0:data[name].shape[3], 0:data[name].shape[4]]
+                    image_window = ndimage.map_coordinates(data[name], \
+                        [XX.flatten(), YY.flatten(), ZZ.flatten(), CC.flatten(), NN.flatten()], mode='constant', cval=0, order=0).reshape(XX.shape)
                     image_array.append(image_window[np.newaxis, ...])
                 except ValueError:
                     tf.logging.fatal(
@@ -169,8 +173,6 @@ class UniformSampler(ImageWindowDataset):
             # just adding the mod specific window size
             spatial_coords[:, N_SPATIAL:] = \
                 spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
-            assert np.all(spatial_coords[:, N_SPATIAL:] <= img_spatial_size), \
-                'spatial coords: out of bounds.'
 
             # include subject id as the 1st column of all_coordinates values
             subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id

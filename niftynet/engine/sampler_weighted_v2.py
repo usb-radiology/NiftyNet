@@ -71,8 +71,7 @@ def weighted_spatial_coordinates(
                   sampler_map.shape[:N_SPATIAL]), \
         'image and sampling map shapes do not match'
     win_spatial_size = np.asarray(win_spatial_size, dtype=np.int32)
-    cropped_map = crop_sampling_map(sampler_map, win_spatial_size)
-    flatten_map = cropped_map.flatten()
+    flatten_map = sampler_map.flatten()
     flatten_map = flatten_map - np.min(flatten_map)
     normaliser = flatten_map.sum()
     # get the sorting indexes to that we can invert the sorting later on.
@@ -98,14 +97,10 @@ def weighted_spatial_coordinates(
             raise
         # invert the sample index to the pre-sorted index
         inverted_sample_index = sorted_indexes[sample_index]
-        # get the x,y,z coordinates on the cropped_map
+        # get the x,y,z coordinates on the sampler_map
         middle_coords[sample, :N_SPATIAL] = np.unravel_index(
-            inverted_sample_index, cropped_map.shape)[:N_SPATIAL]
+            inverted_sample_index, sampler_map.shape)[:N_SPATIAL]
 
-    # re-shift coords due to the crop
-    half_win = np.floor(win_spatial_size / 2).astype(np.int32)
-    middle_coords[:, :N_SPATIAL] = \
-        middle_coords[:, :N_SPATIAL] + half_win[:N_SPATIAL]
     return middle_coords
 
 
