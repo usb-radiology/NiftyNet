@@ -162,7 +162,8 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
             _enumerate_step_points(starting=-border_size[i],
                                    ending=image_shape[i],
                                    win_size=window_shape[i],
-                                   step_size=grid_size[i])
+                                   step_size=grid_size[i],
+                                   border=border_size[i])
             for i in range(N_SPATIAL)]
         starting_coords = np.asanyarray(np.meshgrid(*steps_along_each_dim))
         starting_coords = starting_coords.reshape((N_SPATIAL, -1)).T
@@ -180,7 +181,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     return all_coordinates
 
 
-def _enumerate_step_points(starting, ending, win_size, step_size):
+def _enumerate_step_points(starting, ending, win_size, step_size, border=0):
     """
     generate all possible sampling size in between starting and ending.
 
@@ -191,7 +192,6 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
     :return: a set of unique sampling points
     """
     try:
-        starting = max(int(starting), 0)
         ending = max(int(ending), 0)
         win_size = max(int(win_size), 1)
         step_size = max(int(step_size), 1)
@@ -203,7 +203,7 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
     if starting > ending:
         starting, ending = ending, starting
     sampling_point_set = []
-    while (starting + win_size) <= ending:
+    while (starting + step_size + border) <= ending:
         sampling_point_set.append(starting)
         starting = starting + step_size
     additional_last_point = ending - win_size
