@@ -377,14 +377,14 @@ class SegmentationApplication(BaseApplication):
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
 
-            outputs_collector.add_to_collection(
-                var=image, name='image',
-                average_over_devices=False, summary_type='image3_sagittal',
-                collection=TF_SUMMARIES)
-            outputs_collector.add_to_collection(
-                var=net_out, name='output',
-                average_over_devices=False, summary_type='image3_sagittal',
-                collection=TF_SUMMARIES)
+            #outputs_collector.add_to_collection(
+            #    var=image, name='image',
+            #    average_over_devices=False, summary_type='image3_sagittal',
+            #    collection=TF_SUMMARIES)
+            #outputs_collector.add_to_collection(
+            #    var=net_out, name='output',
+            #    average_over_devices=False, summary_type='image3_sagittal',
+            #    collection=TF_SUMMARIES)
 
             # outputs_collector.add_to_collection(
             #    var=image*180.0, name='image',
