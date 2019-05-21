@@ -206,7 +206,7 @@ def _enumerate_step_points(starting, ending, win_size, step_size, border=0):
     while (starting + step_size + border) <= ending:
         sampling_point_set.append(starting)
         starting = starting + step_size
-    additional_last_point = ending - win_size
+    additional_last_point = ending - win_size + border
     sampling_point_set.append(max(additional_last_point, 0))
     sampling_point_set = np.unique(sampling_point_set).flatten()
     if len(sampling_point_set) == 2:
