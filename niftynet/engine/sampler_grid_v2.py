@@ -149,8 +149,8 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     all_coordinates = {}
     for name, image_shape in img_sizes.items():
         window_shape = win_sizes[name]
-        grid_size = [max(win_size, 0)
-                     for win_size in window_shape]
+        grid_size = [max(win_size - 2 * border, 0)
+                     for (win_size, border) in zip(window_shape, border_size)]
 
         assert len(image_shape) >= N_SPATIAL, \
             'incompatible image shapes in grid_spatial_coordinates'
@@ -159,7 +159,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
         assert len(grid_size) >= N_SPATIAL, \
             'incompatible border sizes in grid_spatial_coordinates'
         steps_along_each_dim = [
-            _enumerate_step_points(starting=0,
+            _enumerate_step_points(starting=-border_size[i],
                                    ending=image_shape[i],
                                    win_size=window_shape[i],
                                    step_size=grid_size[i])
