@@ -166,8 +166,8 @@ class UniformSampler(ImageWindowDataset):
             # Make starting coordinates of the window
             spatial_coords = np.zeros(
                 (n_samples, N_SPATIAL * 2), dtype=np.int32)
-            spatial_coords[:, :N_SPATIAL] = np.maximum(
-                window_centres[:, :N_SPATIAL] - half_win[:N_SPATIAL], 0)
+            spatial_coords[:, :N_SPATIAL] = window_centres[:, :N_SPATIAL] \
+               - half_win[:N_SPATIAL]
 
             # Make the opposite corner of the window is
             # just adding the mod specific window size
