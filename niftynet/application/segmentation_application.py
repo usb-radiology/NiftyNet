@@ -452,18 +452,8 @@ class SegmentationApplication(BaseApplication):
         """
         current_iter = iteration_message.current_iter
         if iteration_message.is_training:
-            if current_iter < 1000:
-                self.current_lr = 1e-9
-            elif current_iter < 2000:
-                self.current_lr = 1e-8
-            elif current_iter < 3000:
-                self.current_lr = 1e-7
-            elif current_iter < 4000:
-                self.current_lr = 1e-6
-            elif current_iter < 6000:
-                self.current_lr = 1e-5
-            elif current_iter < 8000:
-                self.current_lr = 1e-4
+            if current_iter < self.action_param.warmup:
+                self.current_lr = current_iter/self.action_param.warmup * self.action_param.lr
             else:
                 self.current_lr = self.action_param.lr * pow(
                     self.segmentation_param.lr_gamma,

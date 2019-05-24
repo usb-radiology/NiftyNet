@@ -558,6 +558,12 @@ def add_training_args(parser):
         default=0.01)
 
     parser.add_argument(
+        "--warmup",
+        help="[Training only] Set number of warmup iterations",
+        type=int,
+        default=0)
+
+    parser.add_argument(
         "--loss_type",
         metavar='TYPE_STR',
         help="[Training only] Specify loss type_str",
