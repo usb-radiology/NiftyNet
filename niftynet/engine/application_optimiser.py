@@ -64,7 +64,7 @@ class Momentum(object):
         """
         return tf.train.MomentumOptimizer(
             learning_rate=learning_rate,
-            momentum=0.9,
+            momentum=0.98,
             use_locking=False,
             name='Momentum',
             use_nesterov=False)

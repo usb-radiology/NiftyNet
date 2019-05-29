@@ -12,24 +12,6 @@ from niftynet.utilities.util_common import look_up_operations
 import tensorflow as tf
 
 
-class Momentum(object):
-    """
-    Momentum optimiser with default hyper parameters
-    """
-
-    @staticmethod
-    def get_instance(learning_rate):
-        """
-        create an instance of the optimiser
-        """
-        return tf.train.MomentumOptimizer(
-            learning_rate=learning_rate,
-            momentum=0.9,
-            use_locking=False,
-            name='Momentum',
-            use_nesterov=False)
-
-
 class UNet3D(TrainableLayer):
     """
     reimplementation of 3D U-net
