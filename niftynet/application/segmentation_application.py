@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
+import math
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import \
@@ -453,11 +454,11 @@ class SegmentationApplication(BaseApplication):
         current_iter = iteration_message.current_iter
         if iteration_message.is_training:
             if current_iter < self.action_param.warmup:
-                self.current_lr = current_iter/self.action_param.warmup * self.action_param.lr
+                self.current_lr = self.action_param.lr/(1. + math.exp(10 * (-current_iter/self.action_param.warmup+0.5)))
             else:
                 self.current_lr = self.action_param.lr * pow(
                     self.segmentation_param.lr_gamma,
-                    (current_iter // self.segmentation_param.lr_step_size))
+                    ((current_iter - self.action_param.warmup) // self.segmentation_param.lr_step_size))
 
             iteration_message.data_feed_dict[self.is_validation] = False
             iteration_message.data_feed_dict[self.learning_rate] = self.current_lr
