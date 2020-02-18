@@ -564,6 +564,34 @@ def add_training_args(parser):
         default=0)
 
     parser.add_argument(
+        "--gradient_clipping_value",
+        help="[Training only] Set the value to which gradients are clipped",
+        type=float,
+        default=0.5)
+
+    parser.add_argument(
+        "--lr_step_size",
+        help="Number of iterations to keep the learning rate constant before "
+             "dropping it by a factor of lr_gamma.",
+        metavar='',
+        type=int,
+        default=50000)
+
+    parser.add_argument(
+        "--gpu_memory",
+        help="set the memory of GPU usage",
+        metavar='',
+        type=float,
+        default=1)
+
+    parser.add_argument(
+        "--lr_gamma",
+        help="Factor to drop learning rate every lr_step_size iterations",
+        metavar='',
+        type=float,
+        default=0.5)
+
+    parser.add_argument(
         "--loss_type",
         metavar='TYPE_STR',
         help="[Training only] Specify loss type_str",

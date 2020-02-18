@@ -18,13 +18,20 @@ class CropLayer(Layer):
         super(CropLayer, self).__init__(name=name)
         self.border = border
 
+
     def layer_op(self, inputs):
         spatial_rank = layer_util.infer_spatial_rank(inputs)
-        offsets = [0] + [int(self.border)] * spatial_rank + [0]
+        if isinstance(self.border, list):
+            self.border = self.border
+        else:
+            self.border = [int(self.border)] * spatial_rank
+
+        offsets = [0] + self.border + [0]
+
         # inferring the shape of the output by subtracting the border dimension
         out_shape = [
-            int(d) - 2 * int(self.border)
-            for d in list(inputs.shape)[1:-1]]
+            int(d) - 2 * b
+            for (d, b) in zip(list(inputs.shape)[1:-1], offsets[1:-1])]
         out_shape = [-1] + out_shape + [-1]
         output_tensor = tf.slice(inputs, offsets, out_shape)
         return output_tensor
