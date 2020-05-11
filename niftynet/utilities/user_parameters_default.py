@@ -454,6 +454,7 @@ def add_training_args(parser):
         type=str,
         default='adam')
 
+
     parser.add_argument(
         "--sample_per_volume",
         help="[Training only] Set number of samples to take from "
@@ -495,6 +496,24 @@ def add_training_args(parser):
         help="The spatial scaling factor in [min_percentage, max_percentage]",
         type=float_array,
         default=())
+
+    parser.add_argument(
+        "--x_scaling_factor_range",
+        help="The range for the uniform random distribution of scaling factors.",
+        type=float_array,
+        default=(1.0, 1.0))
+
+    parser.add_argument(
+        "--y_scaling_factor_range",
+        help="The range for the uniform random distribution of scaling factors.",
+        type=float_array,
+        default=(1.0, 1.0))
+
+    parser.add_argument(
+        "--z_scaling_factor_range",
+        help="The range for the uniform random distribution of scaling factors.",
+        type=float_array,
+        default=(1.0, 1.0))
 
     parser.add_argument(
         "--antialiasing",
@@ -576,13 +595,6 @@ def add_training_args(parser):
         metavar='',
         type=int,
         default=50000)
-
-    parser.add_argument(
-        "--gpu_memory",
-        help="set the memory of GPU usage",
-        metavar='',
-        type=float,
-        default=1)
 
     parser.add_argument(
         "--lr_gamma",

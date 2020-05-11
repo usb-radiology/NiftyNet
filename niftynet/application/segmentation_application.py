@@ -457,8 +457,8 @@ class SegmentationApplication(BaseApplication):
                 self.current_lr = self.action_param.lr/(1. + math.exp(10 * (-current_iter/self.action_param.warmup+0.5)))
             else:
                 self.current_lr = self.action_param.lr * pow(
-                    self.segmentation_param.lr_gamma,
-                    ((current_iter - self.action_param.warmup) // self.segmentation_param.lr_step_size))
+                    self.action_param.lr_gamma,
+                    ((current_iter - self.action_param.warmup) // self.action_param.lr_step_size))
 
             iteration_message.data_feed_dict[self.is_validation] = False
             iteration_message.data_feed_dict[self.learning_rate] = self.current_lr
